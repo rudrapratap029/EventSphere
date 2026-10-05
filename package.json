@@ -1,0 +1,21 @@
+{
+  "name": "eventhub-platform",
+  "version": "1.0.0",
+  "description": "EventHub - Modern Event Booking Platform (MERN Stack)",
+  "scripts": {
+    "dev:backend": "npm --prefix backend run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:backend": "npm --prefix backend start"
+  },
+  "keywords": [
+    "mern",
+    "event-booking",
+    "react",
+    "node",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC"
+}
