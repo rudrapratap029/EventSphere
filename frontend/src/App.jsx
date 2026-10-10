@@ -1,9 +1,10 @@
 import { Toaster } from 'react-hot-toast';
 import AppRoutes from './routes/AppRoutes';
+import { OrganizerAuthProvider } from './context/OrganizerAuthContext';
 
 function App() {
   return (
-    <>
+    <OrganizerAuthProvider>
       <Toaster
         position="top-right"
         toastOptions={{
@@ -16,7 +17,7 @@ function App() {
         }}
       />
       <AppRoutes />
-    </>
+    </OrganizerAuthProvider>
   );
 }
 

@@ -46,6 +46,10 @@ const eventSchema = new mongoose.Schema(
       required: [true, 'Organizer name is required'],
       trim: true
     },
+    organizerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Organizer'
+    },
     totalSeats: {
       type: Number,
       required: [true, 'Total seats is required'],

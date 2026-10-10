@@ -139,6 +139,38 @@ const HomePage = () => {
         )}
       </section>
 
+      {/* Organizer Call-to-Action Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-indigo-950/60 via-slate-900 to-indigo-950/40 border border-indigo-500/30 rounded-3xl p-8 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+          <div className="space-y-2 text-center md:text-left">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-wider">
+              <HiSparkles className="w-3.5 h-3.5" />
+              For Event Creators
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
+              Host Your Events on EventHub
+            </h2>
+            <p className="text-slate-300 text-sm max-w-xl">
+              Create and manage listings, track live seat allocations, monitor ticket sales revenue, and view attendee analytics from a unified organizer portal.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
+            <Link
+              to="/organizer/dashboard"
+              className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-600/30"
+            >
+              Organizer Portal
+            </Link>
+            <Link
+              to="/organizer/register"
+              className="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition-all border border-slate-700"
+            >
+              Register as Organizer
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* System Status & Diagnostics Box (Phase 1 Retained) */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6">

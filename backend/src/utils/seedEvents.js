@@ -1,4 +1,5 @@
 import Event from '../models/eventModel.js';
+import Organizer from '../models/organizerModel.js';
 
 export const sampleEvents = [
   {
@@ -12,7 +13,7 @@ export const sampleEvents = [
     bannerImage: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&auto=format&fit=crop&q=80',
     organizer: 'NextGen Tech Collective',
     totalSeats: 350,
-    availableSeats: 350,
+    availableSeats: 320,
     ticketPrice: 99,
     status: 'upcoming'
   },
@@ -25,9 +26,9 @@ export const sampleEvents = [
     venue: 'Sunset Meadows Amphitheater',
     city: 'Austin',
     bannerImage: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=1200&auto=format&fit=crop&q=80',
-    organizer: 'Sonic Vibe Productions',
+    organizer: 'NextGen Tech Collective',
     totalSeats: 500,
-    availableSeats: 500,
+    availableSeats: 450,
     ticketPrice: 45,
     status: 'upcoming'
   },
@@ -40,9 +41,9 @@ export const sampleEvents = [
     venue: 'The Skyline Club Lounge',
     city: 'New York',
     bannerImage: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=1200&auto=format&fit=crop&q=80',
-    organizer: 'Alpha Capital Syndicate',
+    organizer: 'NextGen Tech Collective',
     totalSeats: 120,
-    availableSeats: 120,
+    availableSeats: 100,
     ticketPrice: 75,
     status: 'upcoming'
   },
@@ -55,9 +56,9 @@ export const sampleEvents = [
     venue: 'CodeCraft Learning Hub',
     city: 'Seattle',
     bannerImage: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=1200&auto=format&fit=crop&q=80',
-    organizer: 'DevElevate Labs',
+    organizer: 'NextGen Tech Collective',
     totalSeats: 60,
-    availableSeats: 60,
+    availableSeats: 50,
     ticketPrice: 120,
     status: 'upcoming'
   }
@@ -65,13 +66,42 @@ export const sampleEvents = [
 
 export const seedDatabaseIfEmpty = async () => {
   try {
+    // Seed demo organizer if none exists
+    let demoOrganizer = await Organizer.findOne({ email: 'demo@eventhub.com' });
+    if (!demoOrganizer) {
+      console.log('Seeding demo organizer (demo@eventhub.com)...');
+      demoOrganizer = await Organizer.create({
+        name: 'Alex Rivera',
+        email: 'demo@eventhub.com',
+        password: 'organizer123',
+        phone: '+1 (555) 234-5678',
+        companyName: 'NextGen Tech Collective',
+        bio: 'Passionate event curator specializing in technology conferences, developer hackathons, and creative arts festivals.',
+        website: 'https://nextgen-events.example.com',
+        city: 'San Francisco',
+        verified: true
+      });
+      console.log('Demo organizer created successfully!');
+    }
+
     const count = await Event.countDocuments();
     if (count === 0) {
       console.log('No events found. Seeding initial events...');
-      await Event.insertMany(sampleEvents);
-      console.log('Sample events seeded successfully!');
+      const eventsWithOrganizer = sampleEvents.map((ev) => ({
+        ...ev,
+        organizerId: demoOrganizer._id,
+        organizer: demoOrganizer.companyName || demoOrganizer.name
+      }));
+      await Event.insertMany(eventsWithOrganizer);
+      console.log('Sample events seeded successfully with organizer link!');
+    } else {
+      // If events exist without organizerId, bind them to demoOrganizer
+      await Event.updateMany(
+        { organizerId: { $exists: false } },
+        { $set: { organizerId: demoOrganizer._id } }
+      );
     }
   } catch (error) {
-    console.error('Error auto-seeding sample events:', error.message);
+    console.error('Error auto-seeding sample organizer/events:', error.message);
   }
 };

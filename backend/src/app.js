@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import eventRoutes from './routes/eventRoutes.js';
+import organizerRoutes from './routes/organizerRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 const app = express();
@@ -24,6 +25,7 @@ app.get('/api/health', (req, res) => {
 
 // Module Routes
 app.use('/api/events', eventRoutes);
+app.use('/api/organizers', organizerRoutes);
 
 // Error Handling Middlewares
 app.use(notFound);

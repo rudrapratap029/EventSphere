@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
-  HiSparkles, 
   HiCalendarDays, 
   HiPlusCircle, 
   HiBars3, 
   HiXMark,
-  HiTicket
+  HiTicket,
+  HiChartBar,
+  HiUserCircle,
+  HiArrowRightOnRectangle
 } from 'react-icons/hi2';
+import { useOrganizer } from '../../context/OrganizerAuthContext';
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { organizer, isAuthenticated, logout } = useOrganizer();
 
   const isActive = (path) => {
     if (path === '/' && location.pathname === '/') return true;
@@ -53,7 +57,7 @@ const Navbar = () => {
             <Link
               to="/events"
               className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                isActive('/events') && location.pathname !== '/events/new'
+                isActive('/events') && !location.pathname.startsWith('/organizer') && location.pathname !== '/events/new'
                   ? 'bg-slate-800 text-white'
                   : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
               }`}
@@ -61,18 +65,86 @@ const Navbar = () => {
               <HiCalendarDays className="w-4 h-4 text-indigo-400" />
               Explore Events
             </Link>
+
+            {isAuthenticated && (
+              <>
+                <Link
+                  to="/organizer/dashboard"
+                  id="nav-dash-link"
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive('/organizer/dashboard')
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <HiChartBar className="w-4 h-4 text-emerald-400" />
+                  Dashboard
+                </Link>
+                <Link
+                  to="/organizer/events"
+                  id="nav-my-events-link"
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive('/organizer/events')
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  My Events
+                </Link>
+              </>
+            )}
           </div>
 
-          {/* Action button */}
+          {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <Link
               to="/events/new"
               id="create-event-nav-btn"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/25 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/25 cursor-pointer"
             >
               <HiPlusCircle className="w-4 h-4" />
               Host Event
             </Link>
+
+            {isAuthenticated ? (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+                <Link
+                  to="/organizer/profile"
+                  id="nav-profile-link"
+                  className="flex items-center gap-2 p-1.5 pr-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors"
+                  title="Organizer Profile"
+                >
+                  <img
+                    src={organizer?.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'}
+                    alt={organizer?.name}
+                    className="w-7 h-7 rounded-lg object-cover"
+                    onError={(e) => {
+                      e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400';
+                    }}
+                  />
+                  <span className="text-xs font-semibold text-slate-200 max-w-[100px] truncate">
+                    {organizer?.name}
+                  </span>
+                </Link>
+                <button
+                  onClick={logout}
+                  id="nav-logout-btn"
+                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-800 transition-colors cursor-pointer"
+                  title="Sign Out"
+                >
+                  <HiArrowRightOnRectangle className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/organizer/login"
+                id="nav-login-btn"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white text-sm font-medium transition-colors"
+              >
+                <HiUserCircle className="w-4 h-4 text-indigo-400" />
+                Organizer Portal
+              </Link>
+            )}
           </div>
 
           {/* Mobile hamburger */}
@@ -104,11 +176,55 @@ const Navbar = () => {
             to="/events"
             onClick={() => setMobileMenuOpen(false)}
             className={`block px-3 py-2 rounded-lg text-base font-medium ${
-              isActive('/events') && location.pathname !== '/events/new' ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+              isActive('/events') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
             }`}
           >
             Explore Events
           </Link>
+
+          {isAuthenticated ? (
+            <>
+              <Link
+                to="/organizer/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-lg text-base font-medium text-emerald-400 hover:bg-slate-800/60"
+              >
+                Organizer Dashboard
+              </Link>
+              <Link
+                to="/organizer/events"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800/60"
+              >
+                My Events
+              </Link>
+              <Link
+                to="/organizer/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800/60"
+              >
+                Organizer Profile
+              </Link>
+              <button
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 rounded-lg text-base font-medium text-rose-400 hover:bg-slate-800/60"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/organizer/login"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block px-3 py-2 rounded-lg text-base font-medium text-indigo-400 hover:bg-slate-800/60"
+            >
+              Organizer Portal (Sign In)
+            </Link>
+          )}
+
           <Link
             to="/events/new"
             onClick={() => setMobileMenuOpen(false)}

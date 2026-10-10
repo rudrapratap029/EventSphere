@@ -9,6 +9,8 @@ import {
   HiExclamationCircle
 } from 'react-icons/hi2';
 import { createEvent, getEventById, updateEvent } from '../services/eventService';
+import { createOrganizerEvent, updateOrganizerEvent } from '../services/organizerService';
+import { useOrganizer } from '../context/OrganizerAuthContext';
 
 const CATEGORIES = [
   'Technology',
@@ -31,6 +33,7 @@ const PRESET_BANNERS = [
 const EventFormPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { organizer, isAuthenticated } = useOrganizer();
   const isEditMode = Boolean(id);
 
   const [formData, setFormData] = useState({
@@ -42,7 +45,7 @@ const EventFormPage = () => {
     venue: '',
     city: '',
     bannerImage: '',
-    organizer: '',
+    organizer: organizer?.companyName || organizer?.name || '',
     totalSeats: 100,
     availableSeats: '',
     ticketPrice: 0,
@@ -52,6 +55,15 @@ const EventFormPage = () => {
   const [loading, setLoading] = useState(isEditMode);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (!isEditMode && organizer && !formData.organizer) {
+      setFormData((prev) => ({
+        ...prev,
+        organizer: organizer.companyName || organizer.name || ''
+      }));
+    }
+  }, [organizer, isEditMode]);
 
   useEffect(() => {
     if (isEditMode) {
@@ -158,16 +170,20 @@ const EventFormPage = () => {
       };
 
       if (isEditMode) {
-        const res = await updateEvent(id, payload);
+        const res = isAuthenticated ? await updateOrganizerEvent(id, payload) : await updateEvent(id, payload);
         if (res.success) {
           toast.success('Event updated successfully!');
           navigate(`/events/${id}`);
         }
       } else {
-        const res = await createEvent(payload);
+        const res = isAuthenticated ? await createOrganizerEvent(payload) : await createEvent(payload);
         if (res.success) {
           toast.success('Event created successfully!');
-          navigate(`/events/${res.data?._id || ''}`);
+          if (isAuthenticated) {
+            navigate('/organizer/events');
+          } else {
+            navigate(`/events/${res.data?._id || ''}`);
+          }
         }
       }
     } catch (error) {
