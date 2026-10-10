@@ -7,15 +7,16 @@ import {
   HiXMark,
   HiTicket,
   HiChartBar,
-  HiUserCircle,
-  HiArrowRightOnRectangle
+  HiArrowRightOnRectangle,
+  HiUser,
+  HiUserCircle
 } from 'react-icons/hi2';
-import { useOrganizer } from '../../context/OrganizerAuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
-  const { organizer, isAuthenticated, logout } = useOrganizer();
+  const { user, isAuthenticated, isOrganizer, logout } = useAuth();
 
   const isActive = (path) => {
     if (path === '/' && location.pathname === '/') return true;
@@ -66,7 +67,7 @@ const Navbar = () => {
               Explore Events
             </Link>
 
-            {isAuthenticated && (
+            {isAuthenticated && isOrganizer && (
               <>
                 <Link
                   to="/organizer/dashboard"
@@ -109,22 +110,27 @@ const Navbar = () => {
             {isAuthenticated ? (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
                 <Link
-                  to="/organizer/profile"
-                  id="nav-profile-link"
+                  to={isOrganizer ? "/organizer/profile" : "/#"}
+                  id="nav-profile-pill"
                   className="flex items-center gap-2 p-1.5 pr-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors"
-                  title="Organizer Profile"
+                  title={`${user?.name} (${user?.role})`}
                 >
                   <img
-                    src={organizer?.profileImage || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'}
-                    alt={organizer?.name}
+                    src={user?.profileImage || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400'}
+                    alt={user?.name}
                     className="w-7 h-7 rounded-lg object-cover"
                     onError={(e) => {
-                      e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400';
+                      e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400';
                     }}
                   />
-                  <span className="text-xs font-semibold text-slate-200 max-w-[100px] truncate">
-                    {organizer?.name}
-                  </span>
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-semibold text-slate-200 max-w-[100px] truncate leading-tight">
+                      {user?.name}
+                    </span>
+                    <span className="text-[10px] text-indigo-400 capitalize font-medium leading-none">
+                      {user?.role}
+                    </span>
+                  </div>
                 </Link>
                 <button
                   onClick={logout}
@@ -136,14 +142,22 @@ const Navbar = () => {
                 </button>
               </div>
             ) : (
-              <Link
-                to="/organizer/login"
-                id="nav-login-btn"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white text-sm font-medium transition-colors"
-              >
-                <HiUserCircle className="w-4 h-4 text-indigo-400" />
-                Organizer Portal
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  id="nav-login-btn"
+                  className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-200 hover:text-white text-sm font-medium transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  id="nav-signup-btn"
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-indigo-300 hover:text-white text-sm font-semibold transition-colors"
+                >
+                  Register
+                </Link>
+              </div>
             )}
           </div>
 
@@ -184,27 +198,34 @@ const Navbar = () => {
 
           {isAuthenticated ? (
             <>
-              <Link
-                to="/organizer/dashboard"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg text-base font-medium text-emerald-400 hover:bg-slate-800/60"
-              >
-                Organizer Dashboard
-              </Link>
-              <Link
-                to="/organizer/events"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800/60"
-              >
-                My Events
-              </Link>
-              <Link
-                to="/organizer/profile"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800/60"
-              >
-                Organizer Profile
-              </Link>
+              {isOrganizer && (
+                <>
+                  <Link
+                    to="/organizer/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-base font-medium text-emerald-400 hover:bg-slate-800/60"
+                  >
+                    Organizer Dashboard
+                  </Link>
+                  <Link
+                    to="/organizer/events"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800/60"
+                  >
+                    My Events
+                  </Link>
+                  <Link
+                    to="/organizer/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800/60"
+                  >
+                    Organizer Profile
+                  </Link>
+                </>
+              )}
+              <div className="px-3 py-2 text-xs text-slate-400 flex items-center justify-between border-t border-slate-800 mt-2">
+                <span>Signed in as <strong className="text-white">{user?.name}</strong> ({user?.role})</span>
+              </div>
               <button
                 onClick={() => {
                   logout();
@@ -216,13 +237,22 @@ const Navbar = () => {
               </button>
             </>
           ) : (
-            <Link
-              to="/organizer/login"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block px-3 py-2 rounded-lg text-base font-medium text-indigo-400 hover:bg-slate-800/60"
-            >
-              Organizer Portal (Sign In)
-            </Link>
+            <div className="pt-2 border-t border-slate-800 space-y-2">
+              <Link
+                to="/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-lg text-base font-medium text-indigo-400 hover:bg-slate-800/60"
+              >
+                Sign In
+              </Link>
+              <Link
+                to="/signup"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800/60"
+              >
+                Create Account
+              </Link>
+            </div>
           )}
 
           <Link

@@ -1,5 +1,6 @@
 import Event from '../models/eventModel.js';
 import Organizer from '../models/organizerModel.js';
+import User from '../models/userModel.js';
 
 export const sampleEvents = [
   {
@@ -82,6 +83,20 @@ export const seedDatabaseIfEmpty = async () => {
         verified: true
       });
       console.log('Demo organizer created successfully!');
+    }
+
+    // Seed demo user if none exists
+    let demoUser = await User.findOne({ email: 'demo.user@example.com' });
+    if (!demoUser) {
+      console.log('Seeding demo user (demo.user@example.com)...');
+      demoUser = await User.create({
+        name: 'Alex Attendee',
+        email: 'demo.user@example.com',
+        password: 'user123',
+        phone: '+1 (555) 321-4567',
+        role: 'user'
+      });
+      console.log('Demo user created successfully!');
     }
 
     const count = await Event.countDocuments();

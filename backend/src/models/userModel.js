@@ -1,16 +1,16 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
-const organizerSchema = new mongoose.Schema(
+const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Organizer name is required'],
+      required: [true, 'Name is required'],
       trim: true
     },
     email: {
       type: String,
-      required: [true, 'Organizer email is required'],
+      required: [true, 'Email is required'],
       unique: true,
       lowercase: true,
       trim: true,
@@ -30,38 +30,15 @@ const organizerSchema = new mongoose.Schema(
       trim: true,
       default: ''
     },
-    companyName: {
-      type: String,
-      trim: true,
-      default: ''
-    },
     profileImage: {
       type: String,
       trim: true,
-      default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80'
-    },
-    bio: {
-      type: String,
-      trim: true,
-      default: ''
-    },
-    website: {
-      type: String,
-      trim: true,
-      default: ''
-    },
-    city: {
-      type: String,
-      trim: true,
-      default: ''
-    },
-    verified: {
-      type: Boolean,
-      default: false
+      default: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop&q=80'
     },
     role: {
       type: String,
-      default: 'organizer'
+      enum: ['user', 'organizer', 'admin'],
+      default: 'user'
     },
     refreshToken: {
       type: String,
@@ -74,7 +51,7 @@ const organizerSchema = new mongoose.Schema(
 );
 
 // Hash password before saving
-organizerSchema.pre('save', async function () {
+userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
     return;
   }
@@ -83,10 +60,10 @@ organizerSchema.pre('save', async function () {
 });
 
 // Compare password method
-organizerSchema.methods.matchPassword = async function (enteredPassword) {
+userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-const Organizer = mongoose.model('Organizer', organizerSchema);
+const User = mongoose.model('User', userSchema);
 
-export default Organizer;
+export default User;

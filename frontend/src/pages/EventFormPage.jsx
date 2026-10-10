@@ -130,7 +130,6 @@ const EventFormPage = () => {
       status: 'upcoming'
     });
     setErrors({});
-    toast.success('Sample data populated!');
   };
 
   const validate = () => {
