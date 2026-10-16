@@ -9,10 +9,12 @@ import {
   HiExclamationTriangle
 } from 'react-icons/hi2';
 import { getEvents, deleteEvent } from '../services/eventService';
+import { useAuth } from '../context/AuthContext';
 import EventCard from '../components/common/EventCard';
 import EventFilter from '../components/common/EventFilter';
 
 const EventsPage = () => {
+  const { isAuthenticated, isOrganizer } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -103,14 +105,16 @@ const EventsPage = () => {
             <HiArrowPath className={`w-5 h-5 ${loading ? 'animate-spin text-indigo-400' : ''}`} />
           </button>
 
-          <Link
-            to="/events/new"
-            id="create-event-header-btn"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/20 cursor-pointer"
-          >
-            <HiPlusCircle className="w-5 h-5" />
-            Create Event
-          </Link>
+          {isAuthenticated && isOrganizer && (
+            <Link
+              to="/events/new"
+              id="create-event-header-btn"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/20 cursor-pointer"
+            >
+              <HiPlusCircle className="w-5 h-5" />
+              Create Event
+            </Link>
+          )}
         </div>
       </div>
 
@@ -179,7 +183,7 @@ const EventsPage = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <EventCard key={event._id} event={event} onDelete={promptDelete} />
+              <EventCard key={event._id} event={event} onDelete={isAuthenticated && isOrganizer ? promptDelete : undefined} />
             ))}
           </div>
         </div>

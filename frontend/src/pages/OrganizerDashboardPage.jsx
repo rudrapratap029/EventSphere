@@ -158,7 +158,7 @@ const OrganizerDashboardPage = () => {
             </div>
           </div>
           <div>
-            <div className="text-3xl font-black text-cyan-400">${stats.totalRevenue.toLocaleString()}</div>
+            <div className="text-3xl font-black text-cyan-400">₹{stats.totalRevenue.toLocaleString()}</div>
             <div className="text-xs text-slate-400 mt-1">
               <span>Calculated from ticket sales</span>
             </div>
@@ -259,7 +259,7 @@ const OrganizerDashboardPage = () => {
                       </span>
                     </td>
                     <td className="py-3.5 px-4 font-medium text-white">
-                      {item.ticketPrice === 0 ? 'FREE' : `$${item.ticketPrice}`}
+                      {item.ticketPrice === 0 ? 'FREE' : `₹${item.ticketPrice}`}
                     </td>
                     <td className="py-3.5 px-4 text-slate-300">
                       {item.totalSeats} seats
@@ -280,7 +280,7 @@ const OrganizerDashboardPage = () => {
                       </div>
                     </td>
                     <td className="py-3.5 px-4 text-right font-bold text-cyan-400">
-                      ${item.revenue.toLocaleString()}
+                      ₹{item.revenue.toLocaleString()}
                     </td>
                   </tr>
                 ))}
@@ -327,7 +327,7 @@ const OrganizerDashboardPage = () => {
 
                 <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
                   <span className="font-bold text-sm text-white">
-                    {event.ticketPrice === 0 ? 'FREE' : `$${event.ticketPrice}`}
+                    {event.ticketPrice === 0 ? 'FREE' : `₹${event.ticketPrice}`}
                   </span>
                   <div className="flex items-center gap-2">
                     <Link

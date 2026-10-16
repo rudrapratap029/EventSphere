@@ -4,18 +4,25 @@ import {
   getAllEvents,
   getEventById,
   updateEvent,
-  deleteEvent
+  deleteEvent,
+  bookEventTickets
 } from '../controllers/eventController.js';
+import { protectOrganizer } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+// Public read, Organizer-only create
 router.route('/')
-  .post(createEvent)
+  .post(protectOrganizer, createEvent)
   .get(getAllEvents);
 
+// Public read, Organizer-only edit & delete
 router.route('/:id')
   .get(getEventById)
-  .put(updateEvent)
-  .delete(deleteEvent);
+  .put(protectOrganizer, updateEvent)
+  .delete(protectOrganizer, deleteEvent);
+
+// Ticket reservation endpoint for visitors/attendees
+router.post('/:id/book', bookEventTickets);
 
 export default router;

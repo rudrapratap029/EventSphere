@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { 
   HiArrowLeft, 
@@ -8,17 +8,22 @@ import {
   HiMapPin, 
   HiUserGroup, 
   HiTicket,
+  HiCreditCard,
   HiPencilSquare,
   HiTrash,
   HiSparkles,
   HiCheckCircle,
   HiExclamationTriangle
 } from 'react-icons/hi2';
-import { getEventById, deleteEvent, updateEvent } from '../services/eventService';
+import { getEventById, deleteEvent } from '../services/eventService';
+import { loadRazorpayScript, createPaymentOrder, verifyPayment } from '../services/paymentService';
+import { useAuth } from '../context/AuthContext';
 
 const EventDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, isAuthenticated, isOrganizer } = useAuth();
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -73,28 +78,109 @@ const EventDetailsPage = () => {
     e.preventDefault();
     if (!event) return;
 
+    if (!isAuthenticated) {
+      toast.error('Please log in to book tickets');
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+
+    if (isOrganizer) {
+      toast.error('Organizers cannot book tickets. Please use an attendee account.');
+      return;
+    }
+
     const available = event.availableSeats ?? event.totalSeats;
     if (available < bookingSeats) {
-      toast.error(`Only ${available} seats left!`);
+      toast.error(`Only ${available} seat(s) remaining for this event!`);
       return;
     }
 
     setBookingLoading(true);
+
     try {
-      const updatedAvailable = available - bookingSeats;
-      const res = await updateEvent(id, {
-        availableSeats: updatedAvailable,
-        status: updatedAvailable === 0 ? 'completed' : event.status
+      // 1. Ensure Razorpay Checkout SDK is loaded
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        toast.error('Failed to load Razorpay payment gateway. Please check your internet connection.');
+        setBookingLoading(false);
+        return;
+      }
+
+      // 2. Create Razorpay Order on Backend
+      const orderRes = await createPaymentOrder({
+        eventId: id,
+        seats: bookingSeats
       });
 
-      if (res.success) {
-        toast.success(`Successfully booked ${bookingSeats} ticket(s)! Check your confirmation.`);
-        setEvent(res.data);
-        setBookingSeats(1);
+      if (!orderRes.success || !orderRes.data?.order) {
+        throw new Error(orderRes.message || 'Failed to initiate payment order');
       }
+
+      const { order, keyId } = orderRes.data;
+
+      // 3. Configure and open Razorpay Checkout modal
+      const options = {
+        key: keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_EventHub2026Key',
+        amount: order.amount,
+        currency: order.currency || 'INR',
+        name: 'EventHub Platform',
+        description: `Booking for ${event.title}`,
+        image: event.bannerImage || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400',
+        order_id: order.id,
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.phone || ''
+        },
+        theme: {
+          color: '#4f46e5'
+        },
+        handler: async function (response) {
+          setBookingLoading(true);
+          try {
+            // 4. Verify payment signature on backend & create ticket
+            const verifyRes = await verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              eventId: id,
+              seats: bookingSeats
+            });
+
+            if (verifyRes.success && verifyRes.data?._id) {
+              toast.success('Payment verified! Ticket confirmed.');
+              navigate(`/tickets/${verifyRes.data._id}/confirmation`);
+            } else {
+              throw new Error(verifyRes.message || 'Payment verification failed');
+            }
+          } catch (verifyErr) {
+            const errorMsg = verifyErr.response?.data?.message || verifyErr.message || 'Payment verification failed';
+            toast.error(errorMsg);
+            navigate(`/payment/failed?eventId=${id}&reason=${encodeURIComponent(errorMsg)}`);
+          } finally {
+            setBookingLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setBookingLoading(false);
+            toast('Payment cancelled. No ticket created.', { icon: 'ℹ️' });
+          }
+        }
+      };
+
+      const razorpayInstance = new window.Razorpay(options);
+      razorpayInstance.on('payment.failed', function (failResponse) {
+        setBookingLoading(false);
+        const failReason = failResponse.error?.description || 'Payment transaction failed';
+        toast.error(failReason);
+        navigate(`/payment/failed?eventId=${id}&reason=${encodeURIComponent(failReason)}`);
+      });
+
+      razorpayInstance.open();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to book tickets');
-    } finally {
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to initiate booking payment';
+      toast.error(errorMsg);
       setBookingLoading(false);
     }
   };
@@ -134,6 +220,21 @@ const EventDetailsPage = () => {
 
   const availableSeatsCount = event.availableSeats ?? event.totalSeats;
   const isSoldOut = availableSeatsCount <= 0;
+  const isEventActive = ['upcoming', 'ongoing'].includes(event?.status?.toLowerCase() || 'upcoming');
+
+  const isOwner =
+    isAuthenticated &&
+    isOrganizer &&
+    user &&
+    (
+      (event.organizerId && (
+        event.organizerId === user._id ||
+        event.organizerId?._id === user._id ||
+        event.organizerId?.toString() === user._id?.toString()
+      )) ||
+      event.organizer === user.name ||
+      event.organizer === user.companyName
+    );
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
@@ -147,25 +248,27 @@ const EventDetailsPage = () => {
           Back to all events
         </Link>
 
-        <div className="flex items-center gap-2">
-          <Link
-            to={`/events/${event._id}/edit`}
-            id="edit-event-details-btn"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium border border-slate-700 transition-colors"
-          >
-            <HiPencilSquare className="w-4 h-4 text-indigo-400" />
-            Edit Event
-          </Link>
+        {isOwner && (
+          <div className="flex items-center gap-2">
+            <Link
+              to={`/events/${event._id}/edit`}
+              id="edit-event-details-btn"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium border border-slate-700 transition-colors"
+            >
+              <HiPencilSquare className="w-4 h-4 text-indigo-400" />
+              Edit Event
+            </Link>
 
-          <button
-            onClick={() => setShowDeleteModal(true)}
-            id="delete-event-details-btn"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white text-sm font-medium border border-rose-500/20 hover:border-rose-500 transition-colors cursor-pointer"
-          >
-            <HiTrash className="w-4 h-4" />
-            Delete
-          </button>
-        </div>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              id="delete-event-details-btn"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-400 hover:text-white text-sm font-medium border border-rose-500/20 hover:border-rose-500 transition-colors cursor-pointer"
+            >
+              <HiTrash className="w-4 h-4" />
+              Delete
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Banner Header */}
@@ -253,7 +356,7 @@ const EventDetailsPage = () => {
               <div>
                 <span className="text-xs text-slate-400">Ticket Price</span>
                 <div className="text-3xl font-extrabold text-white mt-0.5">
-                  {event.ticketPrice === 0 ? 'Free' : `$${event.ticketPrice}`}
+                  {event.ticketPrice === 0 ? 'Free' : `₹${event.ticketPrice}`}
                   {event.ticketPrice > 0 && <span className="text-xs text-slate-400 font-normal"> / attendee</span>}
                 </div>
               </div>
@@ -285,8 +388,39 @@ const EventDetailsPage = () => {
               </div>
             </div>
 
-            {/* Booking Form Simulation */}
-            {!isSoldOut ? (
+            {/* Booking Form and Restrictions */}
+            {!isEventActive ? (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-center text-sm font-medium">
+                This event is marked as <strong className="capitalize">{event.status}</strong>. Bookings are closed.
+              </div>
+            ) : isSoldOut ? (
+              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-center text-sm font-medium">
+                This event is completely sold out.
+              </div>
+            ) : !isAuthenticated ? (
+              <div className="space-y-3 pt-2">
+                <Link
+                  to="/login"
+                  state={{ from: location }}
+                  id="login-to-book-btn"
+                  className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2"
+                >
+                  <HiTicket className="w-5 h-5" />
+                  Sign In to Book Ticket
+                </Link>
+                <p className="text-center text-xs text-slate-400">
+                  New attendee?{' '}
+                  <Link to="/signup" className="text-indigo-400 hover:underline font-medium">
+                    Create free account
+                  </Link>
+                </p>
+              </div>
+            ) : isOrganizer ? (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-center text-xs leading-relaxed space-y-1">
+                <p className="font-semibold text-sm">Organizer Account Detected</p>
+                <p>Organizers cannot book tickets. Please sign in with an attendee account to reserve tickets.</p>
+              </div>
+            ) : (
               <form onSubmit={handleBookTickets} className="space-y-4 pt-2">
                 <div>
                   <label htmlFor="tickets-select" className="block text-xs font-medium text-slate-300 mb-1.5">
@@ -300,7 +434,7 @@ const EventDetailsPage = () => {
                   >
                     {[...Array(Math.min(10, availableSeatsCount))].map((_, idx) => (
                       <option key={idx + 1} value={idx + 1}>
-                        {idx + 1} Ticket{idx > 0 ? 's' : ''} — ${(idx + 1) * event.ticketPrice}
+                        {idx + 1} Ticket{idx > 0 ? 's' : ''} — ₹{(idx + 1) * event.ticketPrice}
                       </option>
                     ))}
                   </select>
@@ -312,14 +446,16 @@ const EventDetailsPage = () => {
                   disabled={bookingLoading}
                   className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-98 text-white font-semibold text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <HiTicket className="w-5 h-5" />
-                  {bookingLoading ? 'Reserving...' : `Book ${bookingSeats} Ticket${bookingSeats > 1 ? 's' : ''}`}
+                  <HiCreditCard className="w-5 h-5 text-indigo-200" />
+                  {bookingLoading ? (
+                    'Connecting to Razorpay...'
+                  ) : event.ticketPrice === 0 ? (
+                    `Confirm Free Ticket (${bookingSeats})`
+                  ) : (
+                    `Pay ₹${bookingSeats * event.ticketPrice} with Razorpay`
+                  )}
                 </button>
               </form>
-            ) : (
-              <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-center text-sm font-medium">
-                This event is completely sold out.
-              </div>
             )}
 
             <div className="pt-2 text-center text-xs text-slate-500">

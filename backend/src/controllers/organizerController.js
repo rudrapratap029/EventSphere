@@ -6,7 +6,7 @@ import Event from '../models/eventModel.js';
 // Helper to generate JWT Token
 const generateToken = (id) => {
   return jwt.sign(
-    { id },
+    { id, role: 'organizer' },
     process.env.JWT_SECRET || 'eventhub_jwt_super_secret_key_2026',
     { expiresIn: '7d' }
   );

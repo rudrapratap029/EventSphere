@@ -309,6 +309,52 @@ export const getCurrentUser = async (req, res, next) => {
   }
 };
 
+// @desc    Update Current User Profile
+// @route   PUT /api/auth/me
+// @access  Private
+export const updateCurrentUser = async (req, res, next) => {
+  try {
+    const { name, phone, profileImage, password, companyName, city, bio, website } = req.body;
+    let account = null;
+
+    if (req.user.role === 'organizer') {
+      account = await Organizer.findById(req.user._id).select('+password');
+      if (companyName !== undefined) account.companyName = companyName.trim();
+      if (city !== undefined) account.city = city.trim();
+      if (bio !== undefined) account.bio = bio.trim();
+      if (website !== undefined) account.website = website.trim();
+    } else {
+      account = await User.findById(req.user._id).select('+password');
+    }
+
+    if (!account) {
+      return res.status(404).json({
+        success: false,
+        message: 'Account not found'
+      });
+    }
+
+    if (name) account.name = name.trim();
+    if (phone !== undefined) account.phone = phone.trim();
+    if (profileImage) account.profileImage = profileImage.trim();
+    if (password && password.length >= 6) account.password = password;
+
+    await account.save();
+
+    const safeAccount = account.toObject();
+    delete safeAccount.password;
+    delete safeAccount.refreshToken;
+
+    res.status(200).json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: safeAccount
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Logout User / Organizer
 // @route   POST /api/auth/logout
 // @access  Private / Public

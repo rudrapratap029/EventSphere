@@ -3,6 +3,8 @@ import cors from 'cors';
 import authRoutes from './routes/authRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import organizerRoutes from './routes/organizerRoutes.js';
+import ticketRoutes from './routes/ticketRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 
 const app = express();
@@ -28,6 +30,8 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/organizers', organizerRoutes);
+app.use('/api/tickets', ticketRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // Error Handling Middlewares
 app.use(notFound);

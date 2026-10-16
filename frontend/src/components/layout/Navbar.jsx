@@ -4,12 +4,11 @@ import {
   HiCalendarDays, 
   HiPlusCircle, 
   HiBars3, 
-  HiXMark,
-  HiTicket,
-  HiChartBar,
+  HiXMark, 
+  HiTicket, 
+  HiChartBar, 
   HiArrowRightOnRectangle,
-  HiUser,
-  HiUserCircle
+  HiUser
 } from 'react-icons/hi2';
 import { useAuth } from '../../context/AuthContext';
 
@@ -55,32 +54,56 @@ const Navbar = () => {
             >
               Home
             </Link>
-            <Link
-              to="/events"
-              className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                isActive('/events') && !location.pathname.startsWith('/organizer') && location.pathname !== '/events/new'
-                  ? 'bg-slate-800 text-white'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-              }`}
-            >
-              <HiCalendarDays className="w-4 h-4 text-indigo-400" />
-              Explore Events
-            </Link>
 
-            {isAuthenticated && isOrganizer && (
+            {/* VISITOR & USER: Events */}
+            {(!isAuthenticated || !isOrganizer) && (
+              <Link
+                to="/events"
+                id="nav-events-link"
+                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                  isActive('/events')
+                    ? 'bg-slate-800 text-white'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                }`}
+              >
+                <HiCalendarDays className="w-4 h-4 text-indigo-400" />
+                Events
+              </Link>
+            )}
+
+            {/* USER ONLY: My Tickets & Profile */}
+            {isAuthenticated && !isOrganizer && (
               <>
                 <Link
-                  to="/organizer/dashboard"
-                  id="nav-dash-link"
+                  to="/my-tickets"
+                  id="nav-my-tickets-link"
                   className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                    isActive('/organizer/dashboard')
+                    isActive('/my-tickets')
                       ? 'bg-slate-800 text-white'
                       : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                   }`}
                 >
-                  <HiChartBar className="w-4 h-4 text-emerald-400" />
-                  Dashboard
+                  <HiTicket className="w-4 h-4 text-indigo-400" />
+                  My Tickets
                 </Link>
+                <Link
+                  to="/profile"
+                  id="nav-user-profile-link"
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive('/profile')
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <HiUser className="w-4 h-4 text-indigo-400" />
+                  Profile
+                </Link>
+              </>
+            )}
+
+            {/* ORGANIZER ONLY: My Events, Create Event, Dashboard, Profile */}
+            {isAuthenticated && isOrganizer && (
+              <>
                 <Link
                   to="/organizer/events"
                   id="nav-my-events-link"
@@ -92,25 +115,52 @@ const Navbar = () => {
                 >
                   My Events
                 </Link>
+                <Link
+                  to="/events/new"
+                  id="nav-create-event-link"
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive('/events/new') || isActive('/create-event')
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <HiPlusCircle className="w-4 h-4 text-indigo-400" />
+                  Create Event
+                </Link>
+                <Link
+                  to="/organizer/dashboard"
+                  id="nav-dash-link"
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive('/organizer/dashboard') || isActive('/dashboard')
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <HiChartBar className="w-4 h-4 text-emerald-400" />
+                  Dashboard
+                </Link>
+                <Link
+                  to="/organizer/profile"
+                  id="nav-org-profile-link"
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    isActive('/organizer/profile') || isActive('/profile')
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                  }`}
+                >
+                  <HiUser className="w-4 h-4 text-indigo-400" />
+                  Profile
+                </Link>
               </>
             )}
           </div>
 
-          {/* Desktop Actions */}
+          {/* Desktop Right Actions */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              to="/events/new"
-              id="create-event-nav-btn"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/25 cursor-pointer"
-            >
-              <HiPlusCircle className="w-4 h-4" />
-              Host Event
-            </Link>
-
             {isAuthenticated ? (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+              <div className="flex items-center gap-3">
                 <Link
-                  to={isOrganizer ? "/organizer/profile" : "/#"}
+                  to={isOrganizer ? "/organizer/profile" : "/profile"}
                   id="nav-profile-pill"
                   className="flex items-center gap-2 p-1.5 pr-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors"
                   title={`${user?.name} (${user?.role})`}
@@ -132,13 +182,15 @@ const Navbar = () => {
                     </span>
                   </div>
                 </Link>
+
                 <button
                   onClick={logout}
                   id="nav-logout-btn"
-                  className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-rose-400 border border-slate-800 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-rose-500/10 hover:text-rose-400 border border-slate-800 text-slate-300 text-sm font-medium transition-colors cursor-pointer"
                   title="Sign Out"
                 >
                   <HiArrowRightOnRectangle className="w-4 h-4" />
+                  Logout
                 </button>
               </div>
             ) : (
@@ -148,14 +200,14 @@ const Navbar = () => {
                   id="nav-login-btn"
                   className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-200 hover:text-white text-sm font-medium transition-colors"
                 >
-                  Sign In
+                  Login
                 </Link>
                 <Link
                   to="/signup"
                   id="nav-signup-btn"
-                  className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-indigo-300 hover:text-white text-sm font-semibold transition-colors"
+                  className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold transition-colors shadow-lg shadow-indigo-600/25"
                 >
-                  Register
+                  Signup
                 </Link>
               </div>
             )}
@@ -177,54 +229,88 @@ const Navbar = () => {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-slate-800 bg-slate-900/95 px-4 pt-3 pb-5 space-y-2">
-          <Link
-            to="/"
-            onClick={() => setMobileMenuOpen(false)}
-            className={`block px-3 py-2 rounded-lg text-base font-medium ${
-              isActive('/') && location.pathname === '/' ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
-            }`}
-          >
-            Home
-          </Link>
-          <Link
-            to="/events"
-            onClick={() => setMobileMenuOpen(false)}
-            className={`block px-3 py-2 rounded-lg text-base font-medium ${
-              isActive('/events') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
-            }`}
-          >
-            Explore Events
-          </Link>
-
-          {isAuthenticated ? (
+          {/* VISITOR MENU */}
+          {!isAuthenticated && (
             <>
-              {isOrganizer && (
-                <>
-                  <Link
-                    to="/organizer/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-base font-medium text-emerald-400 hover:bg-slate-800/60"
-                  >
-                    Organizer Dashboard
-                  </Link>
-                  <Link
-                    to="/organizer/events"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800/60"
-                  >
-                    My Events
-                  </Link>
-                  <Link
-                    to="/organizer/profile"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800/60"
-                  >
-                    Organizer Profile
-                  </Link>
-                </>
-              )}
-              <div className="px-3 py-2 text-xs text-slate-400 flex items-center justify-between border-t border-slate-800 mt-2">
-                <span>Signed in as <strong className="text-white">{user?.name}</strong> ({user?.role})</span>
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                  isActive('/') && location.pathname === '/' ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+                }`}
+              >
+                Home
+              </Link>
+              <Link
+                to="/events"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                  isActive('/events') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+                }`}
+              >
+                Events
+              </Link>
+              <div className="pt-2 border-t border-slate-800 space-y-2">
+                <Link
+                  to="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-base font-medium text-indigo-400 hover:bg-slate-800/60"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block px-3 py-2 rounded-lg text-base font-medium text-white bg-indigo-600 text-center"
+                >
+                  Signup
+                </Link>
+              </div>
+            </>
+          )}
+
+          {/* USER MENU */}
+          {isAuthenticated && !isOrganizer && (
+            <>
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                  isActive('/') && location.pathname === '/' ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+                }`}
+              >
+                Home
+              </Link>
+              <Link
+                to="/events"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                  isActive('/events') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+                }`}
+              >
+                Events
+              </Link>
+              <Link
+                to="/my-tickets"
+                id="mobile-nav-my-tickets-link"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                  isActive('/my-tickets') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+                }`}
+              >
+                My Tickets
+              </Link>
+              <Link
+                to="/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                  isActive('/profile') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+                }`}
+              >
+                Profile
+              </Link>
+              <div className="px-3 py-2 text-xs text-slate-400 border-t border-slate-800 mt-2">
+                Signed in as <strong className="text-white">{user?.name}</strong> ({user?.role})
               </div>
               <button
                 onClick={() => {
@@ -233,36 +319,73 @@ const Navbar = () => {
                 }}
                 className="w-full text-left px-3 py-2 rounded-lg text-base font-medium text-rose-400 hover:bg-slate-800/60"
               >
-                Sign Out
+                Logout
               </button>
             </>
-          ) : (
-            <div className="pt-2 border-t border-slate-800 space-y-2">
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg text-base font-medium text-indigo-400 hover:bg-slate-800/60"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/signup"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg text-base font-medium text-slate-300 hover:bg-slate-800/60"
-              >
-                Create Account
-              </Link>
-            </div>
           )}
 
-          <Link
-            to="/events/new"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center justify-center gap-2 w-full mt-3 px-4 py-2.5 rounded-xl bg-indigo-600 text-white font-medium text-sm text-center"
-          >
-            <HiPlusCircle className="w-5 h-5" />
-            Host Event
-          </Link>
+          {/* ORGANIZER MENU */}
+          {isAuthenticated && isOrganizer && (
+            <>
+              <Link
+                to="/"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                  isActive('/') && location.pathname === '/' ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+                }`}
+              >
+                Home
+              </Link>
+              <Link
+                to="/organizer/events"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                  isActive('/organizer/events') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+                }`}
+              >
+                My Events
+              </Link>
+              <Link
+                to="/events/new"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium text-indigo-400 ${
+                  isActive('/events/new') || isActive('/create-event') ? 'bg-slate-800 text-white' : 'hover:bg-slate-800/60'
+                }`}
+              >
+                Create Event
+              </Link>
+              <Link
+                to="/organizer/dashboard"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                  isActive('/organizer/dashboard') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+                }`}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/organizer/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                  isActive('/organizer/profile') ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/60'
+                }`}
+              >
+                Profile
+              </Link>
+              <div className="px-3 py-2 text-xs text-slate-400 border-t border-slate-800 mt-2">
+                Signed in as <strong className="text-white">{user?.name}</strong> (Organizer)
+              </div>
+              <button
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 rounded-lg text-base font-medium text-rose-400 hover:bg-slate-800/60"
+              >
+                Logout
+              </button>
+            </>
+          )}
         </div>
       )}
     </nav>

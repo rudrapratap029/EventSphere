@@ -3,7 +3,7 @@ import Event from '../models/eventModel.js';
 
 // @desc    Create a new event
 // @route   POST /api/events
-// @access  Public
+// @access  Private (Organizer)
 export const createEvent = async (req, res, next) => {
   try {
     const {
@@ -15,31 +15,45 @@ export const createEvent = async (req, res, next) => {
       venue,
       city,
       bannerImage,
-      organizer,
       totalSeats,
       availableSeats,
       ticketPrice,
       status
-    } = req.body;
+    } = req.body || {};
 
     // Validate required fields
-    if (!title || !description || !category || !date || !time || !venue || !city || !organizer || totalSeats === undefined || ticketPrice === undefined) {
+    if (
+      !title ||
+      !description ||
+      !category ||
+      !date ||
+      !time ||
+      !venue ||
+      !city ||
+      totalSeats === undefined ||
+      ticketPrice === undefined
+    ) {
       return res.status(400).json({
         success: false,
         message: 'Please provide all required fields'
       });
     }
 
+    // Strictly enforce organizerId from authenticated JWT
+    const organizerId = req.user._id;
+    const organizerName = req.user.companyName || req.user.name || 'Organizer';
+
     const event = new Event({
-      title,
-      description,
-      category,
+      title: title.trim(),
+      description: description.trim(),
+      category: category.trim(),
       date,
-      time,
-      venue,
-      city,
-      bannerImage: bannerImage || undefined,
-      organizer,
+      time: time.trim(),
+      venue: venue.trim(),
+      city: city.trim(),
+      bannerImage: bannerImage?.trim() || undefined,
+      organizer: organizerName,
+      organizerId,
       totalSeats: Number(totalSeats),
       availableSeats: availableSeats !== undefined ? Number(availableSeats) : Number(totalSeats),
       ticketPrice: Number(ticketPrice),
@@ -131,7 +145,7 @@ export const getEventById = async (req, res, next) => {
 
 // @desc    Update event by ID
 // @route   PUT /api/events/:id
-// @access  Public
+// @access  Private (Organizer - Own events only)
 export const updateEvent = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -152,9 +166,28 @@ export const updateEvent = async (req, res, next) => {
       });
     }
 
+    // Ownership check: Organizer can only edit their own events
+    const isOwner =
+      (existingEvent.organizerId && existingEvent.organizerId.toString() === req.user._id.toString()) ||
+      existingEvent.organizer === req.user.name ||
+      existingEvent.organizer === req.user.companyName;
+
+    if (!isOwner) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: You can only edit your own events'
+      });
+    }
+
+    // Build update object and strictly enforce organizerId from authenticated JWT
+    const updateData = { ...(req.body || {}) };
+    delete updateData.organizerId;
+    updateData.organizerId = req.user._id;
+    updateData.organizer = req.user.companyName || req.user.name || existingEvent.organizer;
+
     const updatedEvent = await Event.findByIdAndUpdate(
       id,
-      req.body,
+      updateData,
       { new: true, returnDocument: 'after', runValidators: true }
     );
 
@@ -170,7 +203,7 @@ export const updateEvent = async (req, res, next) => {
 
 // @desc    Delete event by ID
 // @route   DELETE /api/events/:id
-// @access  Public
+// @access  Private (Organizer - Own events only)
 export const deleteEvent = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -191,11 +224,74 @@ export const deleteEvent = async (req, res, next) => {
       });
     }
 
+    // Ownership check: Organizer can only delete their own events
+    const isOwner =
+      (event.organizerId && event.organizerId.toString() === req.user._id.toString()) ||
+      event.organizer === req.user.name ||
+      event.organizer === req.user.companyName;
+
+    if (!isOwner) {
+      return res.status(403).json({
+        success: false,
+        message: 'Forbidden: You can only delete your own events'
+      });
+    }
+
     await Event.findByIdAndDelete(id);
 
     res.status(200).json({
       success: true,
       message: 'Event deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Book ticket seats for an event
+// @route   POST /api/events/:id/book
+// @access  Public / Attendee
+export const bookEventTickets = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { seats } = req.body || {};
+    const requestedSeats = Math.max(1, Number(seats) || 1);
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid event ID format'
+      });
+    }
+
+    const event = await Event.findById(id);
+
+    if (!event) {
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    const available = event.availableSeats ?? event.totalSeats;
+    if (available < requestedSeats) {
+      return res.status(400).json({
+        success: false,
+        message: `Only ${available} seat(s) remaining for this event`
+      });
+    }
+
+    event.availableSeats = available - requestedSeats;
+    if (event.availableSeats === 0) {
+      event.status = 'completed';
+    }
+
+    const updatedEvent = await event.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully booked ${requestedSeats} ticket(s)!`,
+      data: updatedEvent
     });
   } catch (error) {
     next(error);

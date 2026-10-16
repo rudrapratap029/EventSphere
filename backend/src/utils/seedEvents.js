@@ -5,7 +5,7 @@ import User from '../models/userModel.js';
 export const sampleEvents = [
   {
     title: 'Global Tech Summit 2026',
-    description: 'Join top developers, founders, and engineers to explore the latest in Artificial Intelligence, Cloud Infrastructure, and Distributed Systems. Featuring 30+ keynote speakers and workshops.',
+    description: 'Join top developers, founders, and engineers to explore the latest in Cloud Infrastructure, Modern DevOps, and Distributed Systems. Featuring 30+ keynote speakers and workshops.',
     category: 'Technology',
     date: new Date('2026-11-15T09:00:00.000Z'),
     time: '09:00 AM - 05:00 PM',

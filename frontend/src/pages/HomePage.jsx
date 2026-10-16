@@ -217,7 +217,7 @@ const HomePage = () => {
                 <HiCurrencyDollar className="w-5 h-5" />
               </div>
             </div>
-            <div className="text-3xl font-black text-cyan-400">${stats.totalRevenue.toLocaleString()}</div>
+            <div className="text-3xl font-black text-cyan-400">₹{stats.totalRevenue.toLocaleString()}</div>
             <div className="text-xs text-slate-400">
               Ticket sales proceeds
             </div>
@@ -339,7 +339,7 @@ const HomePage = () => {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-medium text-white">
-                        {item.ticketPrice === 0 ? 'FREE' : `$${item.ticketPrice}`}
+                        {item.ticketPrice === 0 ? 'FREE' : `₹${item.ticketPrice}`}
                       </td>
                       <td className="py-3.5 px-4 text-slate-300">
                         {item.soldSeats} / {item.totalSeats}
@@ -356,7 +356,7 @@ const HomePage = () => {
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-right font-bold text-cyan-400">
-                        ${item.revenue.toLocaleString()}
+                        ₹{item.revenue.toLocaleString()}
                       </td>
                     </tr>
                   ))}

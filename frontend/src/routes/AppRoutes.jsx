@@ -9,7 +9,12 @@ import LoginPage from '../pages/LoginPage';
 import SignupPage from '../pages/SignupPage';
 import OrganizerDashboardPage from '../pages/OrganizerDashboardPage';
 import OrganizerEventsPage from '../pages/OrganizerEventsPage';
-import OrganizerProfilePage from '../pages/OrganizerProfilePage';
+import ProfilePage from '../pages/ProfilePage';
+import MyTicketsPage from '../pages/MyTicketsPage';
+import TicketDetailsPage from '../pages/TicketDetailsPage';
+import PaymentSuccessPage from '../pages/PaymentSuccessPage';
+import PaymentFailedPage from '../pages/PaymentFailedPage';
+import TicketConfirmationPage from '../pages/TicketConfirmationPage';
 import { useAuth } from '../context/AuthContext';
 
 // Protected Route Guard with Role-based Authorization
@@ -37,7 +42,7 @@ export const ProtectedRoute = ({ children, allowedRoles }) => {
             <HiShieldExclamation className="w-6 h-6" />
           </div>
           <h2 className="text-xl font-bold text-white">Access Restricted</h2>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-400 leading-relaxed">
             This area requires an account with role <strong className="text-white">{allowedRoles.join(', ')}</strong>. You are currently logged in as <strong className="text-indigo-400">{user?.role}</strong>.
           </p>
           <div className="pt-2 flex justify-center gap-3">
@@ -66,14 +71,12 @@ const AppRoutes = () => {
   return (
     <Layout>
       <Routes>
-        {/* Public Event Routes */}
+        {/* Public Routes */}
         <Route path="/" element={<HomePage />} />
         <Route path="/events" element={<EventsPage />} />
-        <Route path="/events/new" element={<EventFormPage />} />
         <Route path="/events/:id" element={<EventDetailsPage />} />
-        <Route path="/events/:id/edit" element={<EventFormPage />} />
 
-        {/* Unified Authentication Routes */}
+        {/* Authentication Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
 
@@ -81,7 +84,94 @@ const AppRoutes = () => {
         <Route path="/organizer/login" element={<Navigate to="/login?role=organizer" replace />} />
         <Route path="/organizer/register" element={<Navigate to="/signup?role=organizer" replace />} />
 
-        {/* Organizer Role-Protected Routes */}
+        {/* Protected Profile Route (Available to logged-in users and organizers) */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute allowedRoles={['user', 'organizer']}>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* User-Only Ticket Routes */}
+        <Route
+          path="/my-tickets"
+          element={
+            <ProtectedRoute allowedRoles={['user']}>
+              <MyTicketsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tickets/:id"
+          element={
+            <ProtectedRoute allowedRoles={['user']}>
+              <TicketDetailsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tickets/:id/confirmation"
+          element={
+            <ProtectedRoute allowedRoles={['user']}>
+              <TicketConfirmationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tickets/confirmation/:id"
+          element={
+            <ProtectedRoute allowedRoles={['user']}>
+              <TicketConfirmationPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Payment Flow Routes */}
+        <Route
+          path="/payment/success"
+          element={
+            <ProtectedRoute allowedRoles={['user']}>
+              <PaymentSuccessPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/payment/failed" element={<PaymentFailedPage />} />
+
+        {/* Organizer-Only Routes */}
+        <Route
+          path="/create-event"
+          element={
+            <ProtectedRoute allowedRoles={['organizer']}>
+              <EventFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/new"
+          element={
+            <ProtectedRoute allowedRoles={['organizer']}>
+              <EventFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={['organizer']}>
+              <EventFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={['organizer']}>
+              <OrganizerDashboardPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/organizer/dashboard"
           element={
@@ -101,8 +191,16 @@ const AppRoutes = () => {
         <Route
           path="/organizer/profile"
           element={
-            <ProtectedRoute allowedRoles={['organizer', 'user']}>
-              <OrganizerProfilePage />
+            <ProtectedRoute allowedRoles={['organizer']}>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/organizer/*"
+          element={
+            <ProtectedRoute allowedRoles={['organizer']}>
+              <OrganizerDashboardPage />
             </ProtectedRoute>
           }
         />
@@ -117,12 +215,12 @@ const AppRoutes = () => {
               <p className="text-slate-400 text-sm max-w-sm mb-6">
                 The page you are looking for does not exist or has been moved.
               </p>
-              <a
-                href="/"
+              <Link
+                to="/"
                 className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
               >
                 Return to Home
-              </a>
+              </Link>
             </div>
           }
         />

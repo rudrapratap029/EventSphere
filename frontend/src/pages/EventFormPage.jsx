@@ -10,7 +10,7 @@ import {
 } from 'react-icons/hi2';
 import { createEvent, getEventById, updateEvent } from '../services/eventService';
 import { createOrganizerEvent, updateOrganizerEvent } from '../services/organizerService';
-import { useOrganizer } from '../context/OrganizerAuthContext';
+import { useAuth } from '../context/AuthContext';
 
 const CATEGORIES = [
   'Technology',
@@ -33,7 +33,7 @@ const PRESET_BANNERS = [
 const EventFormPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { organizer, isAuthenticated } = useOrganizer();
+  const { user, isAuthenticated, isOrganizer } = useAuth();
   const isEditMode = Boolean(id);
 
   const [formData, setFormData] = useState({
@@ -45,7 +45,7 @@ const EventFormPage = () => {
     venue: '',
     city: '',
     bannerImage: '',
-    organizer: organizer?.companyName || organizer?.name || '',
+    organizer: user?.companyName || user?.name || '',
     totalSeats: 100,
     availableSeats: '',
     ticketPrice: 0,
@@ -57,13 +57,20 @@ const EventFormPage = () => {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (!isEditMode && organizer && !formData.organizer) {
+    if (!isAuthenticated || !isOrganizer) {
+      toast.error('Only organizers are authorized to create or edit events');
+      navigate('/login?role=organizer');
+    }
+  }, [isAuthenticated, isOrganizer, navigate]);
+
+  useEffect(() => {
+    if (!isEditMode && user && !formData.organizer) {
       setFormData((prev) => ({
         ...prev,
-        organizer: organizer.companyName || organizer.name || ''
+        organizer: user.companyName || user.name || ''
       }));
     }
-  }, [organizer, isEditMode]);
+  }, [user, isEditMode]);
 
   useEffect(() => {
     if (isEditMode) {
@@ -72,6 +79,25 @@ const EventFormPage = () => {
           const res = await getEventById(id);
           if (res.success && res.data) {
             const ev = res.data;
+
+            // Enforce ownership check on frontend as well
+            if (user) {
+              const isOwner =
+                (ev.organizerId && (
+                  ev.organizerId === user._id ||
+                  ev.organizerId?._id === user._id ||
+                  ev.organizerId?.toString() === user._id?.toString()
+                )) ||
+                ev.organizer === user.name ||
+                ev.organizer === user.companyName;
+
+              if (!isOwner) {
+                toast.error('Forbidden: You can only edit your own events');
+                navigate('/organizer/events');
+                return;
+              }
+            }
+
             const formattedDate = ev.date ? new Date(ev.date).toISOString().split('T')[0] : '';
             setFormData({
               title: ev.title || '',
@@ -82,7 +108,7 @@ const EventFormPage = () => {
               venue: ev.venue || '',
               city: ev.city || '',
               bannerImage: ev.bannerImage || '',
-              organizer: ev.organizer || '',
+              organizer: ev.organizer || user?.companyName || user?.name || '',
               totalSeats: ev.totalSeats || 100,
               availableSeats: ev.availableSeats ?? ev.totalSeats,
               ticketPrice: ev.ticketPrice ?? 0,
@@ -91,7 +117,7 @@ const EventFormPage = () => {
           }
         } catch (error) {
           toast.error(error.response?.data?.message || 'Failed to fetch event data');
-          navigate('/events');
+          navigate('/organizer/events');
         } finally {
           setLoading(false);
         }
@@ -99,7 +125,7 @@ const EventFormPage = () => {
 
       fetchCurrentEvent();
     }
-  }, [id, isEditMode, navigate]);
+  }, [id, isEditMode, navigate, user]);
 
   const handleChange = (e) => {
     const { name, value, type } = e.target;
@@ -115,8 +141,8 @@ const EventFormPage = () => {
 
   const fillSampleData = () => {
     setFormData({
-      title: 'AI & NextGen Cloud Developer Conference',
-      description: 'A full-day flagship conference focusing on large-scale AI applications, cloud infrastructure, container orchestration, and next-generation frameworks. Featuring keynote sessions from renowned industry pioneers.',
+      title: 'Cloud & NextGen Developer Conference',
+      description: 'A full-day flagship conference focusing on large-scale cloud infrastructure, container orchestration, microservices, and next-generation frameworks. Featuring keynote sessions from renowned industry pioneers.',
       category: 'Technology',
       date: '2026-11-25',
       time: '09:30 AM - 05:30 PM',
@@ -169,20 +195,16 @@ const EventFormPage = () => {
       };
 
       if (isEditMode) {
-        const res = isAuthenticated ? await updateOrganizerEvent(id, payload) : await updateEvent(id, payload);
+        const res = await updateOrganizerEvent(id, payload);
         if (res.success) {
           toast.success('Event updated successfully!');
           navigate(`/events/${id}`);
         }
       } else {
-        const res = isAuthenticated ? await createOrganizerEvent(payload) : await createEvent(payload);
+        const res = await createOrganizerEvent(payload);
         if (res.success) {
           toast.success('Event created successfully!');
-          if (isAuthenticated) {
-            navigate('/organizer/events');
-          } else {
-            navigate(`/events/${res.data?._id || ''}`);
-          }
+          navigate('/organizer/events');
         }
       }
     } catch (error) {
@@ -415,7 +437,7 @@ const EventFormPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div>
               <label htmlFor="event-price-input" className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                Ticket Price ($) <span className="text-rose-400">*</span>
+                Ticket Price (₹) <span className="text-rose-400">*</span>
               </label>
               <input
                 id="event-price-input"

@@ -26,6 +26,7 @@ router.route('/profile')
 
 // Protected organizer dashboard & analytics
 router.get('/dashboard', protectOrganizer, getOrganizerDashboard);
+router.get('/analytics', protectOrganizer, getOrganizerDashboard);
 
 // Protected organizer events management
 router.route('/events')

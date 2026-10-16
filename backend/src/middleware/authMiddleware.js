@@ -40,8 +40,13 @@ export const authMiddleware = async (req, res, next) => {
       }
 
       req.user = account;
+      // Ensure req.user.role is always explicitly populated
+      if (!req.user.role) {
+        req.user.role = (account.companyName !== undefined || decoded.role === 'organizer') ? 'organizer' : 'user';
+      }
+
       // Backward compatibility for existing organizer controllers
-      if (account.role === 'organizer') {
+      if (req.user.role === 'organizer') {
         req.organizer = account;
       }
 
@@ -73,10 +78,12 @@ export const roleMiddleware = (...roles) => {
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    const currentRole = req.user.role || (req.organizer ? 'organizer' : 'user');
+
+    if (!roles.includes(currentRole)) {
       return res.status(403).json({
         success: false,
-        message: `Forbidden: role '${req.user.role}' is not authorized to access this resource`
+        message: `Forbidden: role '${currentRole}' is not authorized to access this resource`
       });
     }
 

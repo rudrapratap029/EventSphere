@@ -8,8 +8,25 @@ import {
   HiTrash,
   HiPencilSquare
 } from 'react-icons/hi2';
+import { useAuth } from '../../context/AuthContext';
 
 const EventCard = ({ event, onDelete }) => {
+  const { user, isAuthenticated, isOrganizer } = useAuth();
+
+  const isOwner =
+    isAuthenticated &&
+    isOrganizer &&
+    user &&
+    (
+      (event.organizerId && (
+        event.organizerId === user._id ||
+        event.organizerId?._id === user._id ||
+        event.organizerId?.toString() === user._id?.toString()
+      )) ||
+      event.organizer === user.name ||
+      event.organizer === user.companyName
+    );
+
   const formatDate = (dateString) => {
     try {
       const options = { month: 'short', day: 'numeric', year: 'numeric' };
@@ -82,7 +99,7 @@ const EventCard = ({ event, onDelete }) => {
         {/* Price Tag overlay */}
         <div className="absolute bottom-3 right-3">
           <div className="px-3 py-1 rounded-xl bg-slate-950/90 border border-slate-700 text-white font-bold text-sm backdrop-blur-md shadow-lg">
-            {event.ticketPrice === 0 ? 'FREE' : `$${event.ticketPrice}`}
+            {event.ticketPrice === 0 ? 'FREE' : `₹${event.ticketPrice}`}
           </div>
         </div>
       </div>
@@ -145,15 +162,17 @@ const EventCard = ({ event, onDelete }) => {
             View Details
           </Link>
 
-          <Link
-            to={`/events/${event._id}/edit`}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors"
-            title="Edit Event"
-          >
-            <HiPencilSquare className="w-4 h-4" />
-          </Link>
+          {isOwner && (
+            <Link
+              to={`/events/${event._id}/edit`}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors"
+              title="Edit Event"
+            >
+              <HiPencilSquare className="w-4 h-4" />
+            </Link>
+          )}
 
-          {onDelete && (
+          {isOwner && onDelete && (
             <button
               onClick={() => onDelete(event._id, event.title)}
               className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 hover:border-rose-500 text-rose-400 hover:text-white transition-colors cursor-pointer"

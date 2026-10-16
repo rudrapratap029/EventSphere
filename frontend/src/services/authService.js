@@ -28,6 +28,11 @@ export const getMe = async () => {
   return response.data;
 };
 
+export const updateMe = async (userData) => {
+  const response = await api.put('/auth/me', userData);
+  return response.data;
+};
+
 export const logout = async () => {
   const response = await api.post('/auth/logout');
   return response.data;

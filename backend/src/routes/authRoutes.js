@@ -5,6 +5,7 @@ import {
   registerOrganizer,
   loginOrganizer,
   getCurrentUser,
+  updateCurrentUser,
   logout,
   refreshAccessToken
 } from '../controllers/authController.js';
@@ -21,7 +22,9 @@ router.post('/organizer/register', registerOrganizer);
 router.post('/organizer/login', loginOrganizer);
 
 // Common auth endpoints
-router.get('/me', authMiddleware, getCurrentUser);
+router.route('/me')
+  .get(authMiddleware, getCurrentUser)
+  .put(authMiddleware, updateCurrentUser);
 router.post('/logout', authMiddleware, logout);
 router.post('/refresh', refreshAccessToken);
 
