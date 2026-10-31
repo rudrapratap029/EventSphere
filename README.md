@@ -1,6 +1,5 @@
 # EventHub - Event Booking Platform
 
-
 A full-stack modern MERN (MongoDB, Express, React, Node.js) platform for discovering, creating, and booking events.
 
 ## Project Structure
